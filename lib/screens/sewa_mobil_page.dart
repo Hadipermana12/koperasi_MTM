@@ -10,7 +10,7 @@ class SewaMobilPage extends StatefulWidget {
 class _SewaMobilPageState extends State<SewaMobilPage> {
   DateTime? _selectedDate;
   int _selectedDurasi = 12; // 12 atau 24
-  String _selectedTipe = 'Lepas Kunci'; // 'Lepas Kunci' atau 'Dengan Sopir'
+  String _selectedTipe = 'Lepas Kunci';
 
   String _formatDate(DateTime date) {
     const months = [
@@ -132,22 +132,6 @@ class _SewaMobilPageState extends State<SewaMobilPage> {
             ],
           ),
 
-          const SizedBox(height: 16),
-
-          // Tipe Sewa
-          const Text(
-            'Tipe Sewa',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildTipeChip('Lepas Kunci', '(Tanpa Sopir)'),
-              const SizedBox(width: 10),
-              _buildTipeChip('Dengan Sopir', ''),
-            ],
-          ),
-
           const SizedBox(height: 20),
 
           // Tombol Cari Mobil
@@ -199,50 +183,6 @@ class _SewaMobilPageState extends State<SewaMobilPage> {
               color: isSelected ? Colors.white : Colors.black54,
               height: 1.4,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTipeChip(String tipe, String sub) {
-    final isSelected = _selectedTipe == tipe;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTipe = tipe),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE8F7F0) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF14A96B) : Colors.grey.shade300,
-              width: isSelected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                tipe,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? const Color(0xFF14A96B) : Colors.black54,
-                ),
-              ),
-              if (sub.isNotEmpty) ...[
-                const SizedBox(width: 4),
-                Text(
-                  sub,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isSelected ? const Color(0xFF14A96B) : Colors.grey,
-                  ),
-                ),
-              ],
-            ],
           ),
         ),
       ),
@@ -306,8 +246,6 @@ class _SewaMobilPageState extends State<SewaMobilPage> {
   }
 
   Widget _buildCarCard(BuildContext context, _CarData car) {
-    final priceLabel = '${_formatCurrency(car.price)}\n/ ${_selectedDurasi} jam';
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -514,8 +452,6 @@ class _SewaMobilPageState extends State<SewaMobilPage> {
             const Divider(),
             const SizedBox(height: 10),
             _detailRow('Durasi Sewa', '$_selectedDurasi Jam'),
-            const SizedBox(height: 8),
-            _detailRow('Tipe Sewa', _selectedTipe),
             const SizedBox(height: 8),
             _detailRow(
               'Tanggal',

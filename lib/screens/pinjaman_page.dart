@@ -8,9 +8,43 @@ class PinjamanPage extends StatefulWidget {
 }
 
 class _PinjamanPageState extends State<PinjamanPage> {
+  final TextEditingController _amountController = TextEditingController(text: "5.000.000");
   double _jumlahPembiayaan = 5000000;
   int _jangkaWaktu = 6;
   String _jenisPembiayaan = 'Multiguna';
+  bool _isOverLimit = false;
+
+  final Map<String, double> _limits = {
+    'Multiguna': 10000000,
+    'Syariah': 15000000,
+    'Darurat': 10000000, // Based on banner limit in mockup
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  @override
+  void dispose() {
+    _amountController.removeListener(_onAmountChanged);
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _onAmountChanged() {
+    String text = _amountController.text.replaceAll('.', '').replaceAll('Rp ', '');
+    if (text.isEmpty) text = '0';
+    double? val = double.tryParse(text);
+    if (val != null) {
+      double currentLimit = _limits[_jenisPembiayaan] ?? 10000000;
+      setState(() {
+        _jumlahPembiayaan = val;
+        _isOverLimit = val > currentLimit;
+      });
+    }
+  }
 
   String _formatNumber(double amount) {
     return amount.toStringAsFixed(0).replaceAllMapped(
@@ -33,8 +67,22 @@ class _PinjamanPageState extends State<PinjamanPage> {
     return 'Rp $wholeNumber,${parts[1]}';
   }
 
+  void _updateAmountFromSlider(double value) {
+    setState(() {
+      _jumlahPembiayaan = value;
+      _isOverLimit = false;
+      String formatted = _formatNumber(value);
+      _amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    double currentLimit = _limits[_jenisPembiayaan] ?? 10000000;
+    
     double marginBulan = 0.005 * _jumlahPembiayaan; // 0.5%
     double cicilanPokok = _jumlahPembiayaan / _jangkaWaktu;
     double estimasiCicilan = cicilanPokok + marginBulan;
@@ -77,12 +125,12 @@ class _PinjamanPageState extends State<PinjamanPage> {
             const SizedBox(height: 24),
             _buildJenisPembiayaan(),
             const SizedBox(height: 24),
-            _buildJumlahPembiayaan(),
+            _buildJumlahPembiayaanSection(currentLimit),
             const SizedBox(height: 24),
             _buildJangkaWaktu(),
             const SizedBox(height: 24),
             _buildRincianPembiayaan(marginBulan, cicilanPokok, estimasiCicilan, totalPembiayaan),
-            const SizedBox(height: 100), // Space for bottom button
+            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -141,7 +189,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
               const SizedBox(width: 12),
               _buildTypeCard('Syariah', 'Rp 15.0jt'),
               const SizedBox(width: 12),
-              _buildTypeCard('Darurat', 'Sesuai harga barang', subLabel: true),
+              _buildTypeCard('Darurat', 'Sesuai harga barang'),
             ],
           ),
         ],
@@ -149,11 +197,21 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  Widget _buildTypeCard(String title, String subtitle, {bool subLabel = false}) {
+  Widget _buildTypeCard(String title, String subtitle) {
     bool isSelected = _jenisPembiayaan == title;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _jenisPembiayaan = title),
+        onTap: () {
+          setState(() {
+            _jenisPembiayaan = title;
+            double limit = _limits[title] ?? 10000000;
+            if (_jumlahPembiayaan > limit) {
+              _isOverLimit = true;
+            } else {
+              _isOverLimit = false;
+            }
+          });
+        },
         child: Container(
           height: 120,
           padding: const EdgeInsets.all(12),
@@ -195,7 +253,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  Widget _buildJumlahPembiayaan() {
+  Widget _buildJumlahPembiayaanSection(double currentLimit) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
@@ -217,10 +275,51 @@ class _PinjamanPageState extends State<PinjamanPage> {
             ),
             child: Column(
               children: [
-                Text(
-                  _formatCurrency(_jumlahPembiayaan),
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    const Text(
+                      'Rp ',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                    ),
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        style: TextStyle(
+                          fontSize: 32, 
+                          fontWeight: FontWeight.bold, 
+                          color: _isOverLimit ? Colors.red : const Color(0xFF0284C7)
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (val) {
+                          String clean = val.replaceAll('.', '');
+                          if (clean.isEmpty) clean = '0';
+                          double parsed = double.parse(clean);
+                          String formatted = _formatNumber(parsed);
+                          _amountController.value = TextEditingValue(
+                            text: formatted,
+                            selection: TextSelection.collapsed(offset: formatted.length),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
+                if (_isOverLimit)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Melebihi limit ${titleCase(_jenisPembiayaan)} (${_formatCurrency(currentLimit)})',
+                      style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 SliderTheme(
                   data: SliderThemeData(
@@ -231,17 +330,17 @@ class _PinjamanPageState extends State<PinjamanPage> {
                     trackHeight: 10,
                   ),
                   child: Slider(
-                    value: _jumlahPembiayaan,
+                    value: _jumlahPembiayaan.clamp(1000000.0, currentLimit),
                     min: 1000000,
-                    max: 10000000,
-                    onChanged: (val) => setState(() => _jumlahPembiayaan = val),
+                    max: currentLimit,
+                    onChanged: (val) => _updateAmountFromSlider(val),
                   ),
                 ),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Rp 1jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
-                    Text('Rp 10.0jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                    const Text('Rp 1jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                    Text(_formatCurrency(currentLimit).replaceAll('Rp ', 'Rp ').replaceAll('.000.000', '.0jt'), style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
                   ],
                 ),
               ],
@@ -251,6 +350,8 @@ class _PinjamanPageState extends State<PinjamanPage> {
       ),
     );
   }
+
+  String titleCase(String text) => text[0].toUpperCase() + text.substring(1);
 
   Widget _buildJangkaWaktu() {
     return Padding(
@@ -302,11 +403,11 @@ class _PinjamanPageState extends State<PinjamanPage> {
                   color: isSelected ? Colors.white : const Color(0xFF374151),
                 ),
               ),
-              Text(
+              const Text(
                 'Bulan',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                  color: Colors.grey,
                 ),
               ),
             ],
@@ -413,9 +514,9 @@ class _PinjamanPageState extends State<PinjamanPage> {
   Widget _buildBottomButton() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF84CC16),
+      color: _isOverLimit ? Colors.grey : const Color(0xFF84CC16),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: _isOverLimit ? null : () {},
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,

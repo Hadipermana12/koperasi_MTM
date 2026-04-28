@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/main_layout.dart';
+import 'screens/login_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,10 +15,10 @@ class MyApp extends StatelessWidget {
       title: 'Koperasi MTM',
       theme: ThemeData(
         fontFamily: 'Inter',
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF14A96B)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1296C4)),
         useMaterial3: true,
       ),
-      home: const MainLayout(),
+      home: const LoginPage(),
     );
   }
 }

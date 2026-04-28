@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'shop_page.dart';
+import 'activity_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -15,7 +16,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _pages = [
     const HomePage(),
     const ShopPage(isStatic: true),
-    const Center(child: Text('Activity Page - Coming Soon')),
+    const ActivityPage(),
     const Center(child: Text('Profile Page - Coming Soon')),
   ];
 
@@ -27,7 +28,7 @@ class _MainLayoutState extends State<MainLayout> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -42,39 +43,31 @@ class _MainLayoutState extends State<MainLayout> {
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF14A96B),
-          unselectedItemColor: Colors.grey.shade500,
+          selectedItemColor: const Color(0xFF0284C7),
+          unselectedItemColor: const Color(0xFF9CA3AF),
           showUnselectedLabels: true,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           elevation: 0,
           items: const [
             BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4.0),
-                child: Icon(Icons.home_filled),
-              ),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_rounded),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4.0),
-                child: Icon(Icons.shopping_bag_outlined),
-              ),
+              icon: Icon(Icons.shopping_bag_outlined),
+              activeIcon: Icon(Icons.shopping_bag_rounded),
               label: 'Shop',
             ),
             BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4.0),
-                child: Icon(Icons.list_alt),
-              ),
+              icon: Icon(Icons.list_alt_rounded),
+              activeIcon: Icon(Icons.list_alt_rounded),
               label: 'Activity',
             ),
             BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4.0),
-                child: Icon(Icons.person_outline),
-              ),
+              icon: Icon(Icons.person_outline_rounded),
+              activeIcon: Icon(Icons.person_rounded),
               label: 'Profile',
             ),
           ],

@@ -9,206 +9,324 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AppBar(
-          backgroundColor: const Color(0xFF14A96B),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {},
-          ),
-          title: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Selamat Datang',
-                style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.normal),
-              ),
-              Text(
-                'Budi Santoso',
-                style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          actions: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_none, color: Colors.white),
-                  onPressed: () {},
-                ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTopSection(),
-            const SizedBox(height: 24),
-            _buildLayanan(context),
-            const SizedBox(height: 24),
-            _buildPromoSpesial(),
-            const SizedBox(height: 24),
-            _buildTransaksiTerakhir(),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopSection() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF14A96B),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFFF4F6FA),
+      body: Column(
         children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+          _buildAppBar(),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Saldo Simpanan',
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
+                  _buildLogoSection(),
+                  const SizedBox(height: 16),
+                  _buildLimitCard(),
+                  const SizedBox(height: 20),
+                  _buildLayanan(context),
+                  const SizedBox(height: 20),
+                  _buildTagihanCard(),
+                  const SizedBox(height: 20),
+                  _buildPromoSection(),
+                  const SizedBox(height: 30),
                 ],
               ),
-              Icon(Icons.visibility_outlined, color: Colors.white, size: 20),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Rp 12.450.000',
-            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'No. Anggota: 001234567',
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF14A96B),
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.arrow_outward, size: 18),
-                  label: const Text('Top Up', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.south_west, size: 18),
-                  label: const Text('Transfer', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ─── APP BAR ──────────────────────────────────────────────────────────────
+  Widget _buildAppBar() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF1296C4),
+      ),
+      padding: EdgeInsets.only(
+        top: 42,
+        left: 16,
+        right: 16,
+        bottom: 14,
+      ),
+      child: Row(
+        children: [
+          // Avatar circle with letter "P"
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              color: Color(0xFF14A96B),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text(
+                'P',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Halo, Putri',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Notification icon with badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+                onPressed: () {},
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFCC00),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF1296C4), width: 1.5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
+          // Chat icon
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 24),
+            onPressed: () {},
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── LOGO SECTION ─────────────────────────────────────────────────────────
+  Widget _buildLogoSection() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // KMMA logo chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Green arrow icon mimicking KMMA logo
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF14A96B),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 13),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'KMMA',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1296C4),
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── LIMIT BELANJA CARD ───────────────────────────────────────────────────
+  Widget _buildLimitCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1296C4), Color(0xFF0D7AA0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1296C4).withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Total Limit Belanja',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Rp 50.000.000',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 14),
+            // Divider line
+            Container(
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Terpakai',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Rp 12.500.000',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Tersedia',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Rp 37.500.000',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── LAYANAN ──────────────────────────────────────────────────────────────
   Widget _buildLayanan(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Layanan',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A2E),
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: _buildLayananItem(
-                  icon: Icons.directions_car,
-                  color: Colors.blue,
+                  context: context,
+                  icon: Icons.directions_car_rounded,
+                  color: const Color(0xFF1296C4),
                   label: 'Sewa Mobil',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SewaMobilPage()),
-                    );
-                  },
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SewaMobilPage()),
+                  ),
                 ),
               ),
               Expanded(
                 child: _buildLayananItem(
-                  icon: Icons.volunteer_activism,
-                  color: Colors.purple,
-                  label: 'Pinjaman',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PinjamanPage()),
-                    );
-                  },
+                  context: context,
+                  icon: Icons.account_balance_wallet_rounded,
+                  color: const Color(0xFF14A96B),
+                  label: 'Pembiayaan',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PinjamanPage()),
+                  ),
                 ),
               ),
-              Expanded(child: _buildLayananItem(icon: Icons.inventory_2_outlined, color: Colors.orange, label: 'Open PO')),
               Expanded(
                 child: _buildLayananItem(
-                  icon: Icons.shopping_cart_outlined,
-                  color: Colors.green,
-                  label: 'Belanja',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ShopPage(isStatic: false)),
-                    );
-                  },
+                  context: context,
+                  icon: Icons.storefront_rounded,
+                  color: const Color(0xFFFF8C00),
+                  label: 'Belanja Toko',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ShopPage(isStatic: false)),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _buildLayananItem(
+                  context: context,
+                  icon: Icons.inventory_2_rounded,
+                  color: const Color(0xFF9B4CFF),
+                  label: 'Open PO\nMetema',
                 ),
               ),
             ],
@@ -218,220 +336,274 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildLayananItem({required IconData icon, required Color color, required String label, VoidCallback? onTap}) {
-    return InkWell(
+  Widget _buildLayananItem({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color, size: 28),
           ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: Colors.black87),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF444466),
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPromoSpesial() {
+  // ─── TAGIHAN CARD ─────────────────────────────────────────────────────────
+  Widget _buildTagihanCard() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: title + badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Tagihan MTM Aktif',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A2E),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFFCC00)),
+                  ),
+                  child: const Text(
+                    'Aktif',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFB8860B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // Info rows
+            _buildTagihanRow('No. PO', 'MTM-2026-0421', isNormal: true),
+            const SizedBox(height: 8),
+            _buildTagihanRow('Total Tagihan', 'Rp 5.250.000', isNormal: true),
+            const SizedBox(height: 8),
+            _buildTagihanRow('Jatuh Tempo', '30 April 2026', isDanger: true),
+            const SizedBox(height: 18),
+            // Bayar Sekarang button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1296C4),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'Bayar Sekarang',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagihanRow(String label, String value, {bool isNormal = false, bool isDanger = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isDanger ? const Color(0xFFE53935) : const Color(0xFF1A1A2E),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── PROMO & PENAWARAN ────────────────────────────────────────────────────
+  Widget _buildPromoSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.sell_outlined, size: 20, color: Colors.black87),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Promo Spesial',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Text(
+                'Promo & Penawaran',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
                 ),
               ),
               Text(
                 'Lihat Semua >',
-                style: TextStyle(fontSize: 14, color: const Color(0xFF14A96B), fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: const Color(0xFF1296C4),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           _buildPromoCard(
-            title: 'Diskon 50% Transfer',
-            subtitle: 'Gratis biaya admin transfer antar bank',
-            color: const Color(0xFF9B4CFF), // Purple
+            tag: 'Promo Spesial',
+            title: 'Diskon Belanja 20%',
+            subtitle: 'Khusus anggota baru',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF14A96B), Color(0xFF0D8A57)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
           const SizedBox(height: 12),
           _buildPromoCard(
-            title: 'Cashback Belanja 20%',
-            subtitle: 'Maksimal cashback Rp 50.000',
-            color: const Color(0xFFFF5E00), // Orange
+            tag: 'Terbatas',
+            title: 'Bunga Pinjaman 0%',
+            subtitle: 'Untuk 3 bulan pertama',
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1296C4), Color(0xFF0A6B8A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
           const SizedBox(height: 12),
           _buildPromoCard(
-            title: 'Bunga Simpanan 8%',
-            subtitle: 'Dapatkan bunga lebih tinggi untuk simpanan berjangka',
-            color: const Color(0xFF1E70FF), // Blue
+            tag: 'Flash Sale',
+            title: 'Cashback Top Up 5%',
+            subtitle: 'Min. top up Rp 100.000',
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFF8C00), Color(0xFFCC6600)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPromoCard({required String title, required String subtitle, required Color color}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransaksiTerakhir() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.access_time, size: 20, color: Colors.black87),
-              SizedBox(width: 8),
-              Text(
-                'Transaksi Terakhir',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildTransaksiItem(
-            icon: Icons.south_west,
-            iconColor: Colors.green,
-            title: 'Top Up Saldo',
-            date: '01 Apr 2026',
-            amount: '+Rp 500.000',
-            amountColor: Colors.green,
-            status: 'Berhasil',
-          ),
-          const SizedBox(height: 12),
-          _buildTransaksiItem(
-            icon: Icons.arrow_outward,
-            iconColor: Colors.red,
-            title: 'Transfer ke Ani',
-            date: '31 Mar 2026',
-            amount: '-Rp 150.000',
-            amountColor: Colors.red,
-            status: 'Berhasil',
-          ),
-          const SizedBox(height: 12),
-          _buildTransaksiItem(
-            icon: Icons.arrow_outward,
-            iconColor: Colors.red,
-            title: 'Bayar Listrik',
-            date: '30 Mar 2026',
-            amount: '-Rp 350.000',
-            amountColor: Colors.red,
-            status: 'Berhasil',
-          ),
-          const SizedBox(height: 12),
-          _buildTransaksiItem(
-            icon: Icons.south_west,
-            iconColor: Colors.green,
-            title: 'Bunga Simpanan',
-            date: '28 Mar 2026',
-            amount: '+Rp 75.000',
-            amountColor: Colors.green,
-            status: 'Berhasil',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransaksiItem({
-    required IconData icon,
-    required Color iconColor,
+  Widget _buildPromoCard({
+    required String tag,
     required String title,
-    required String date,
-    required String amount,
-    required Color amountColor,
-    required String status,
+    required String subtitle,
+    required Gradient gradient,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
+        gradient: gradient,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Tag badge
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                ),
-              ],
+            child: Text(
+              tag,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: amountColor),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                status,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
-            ],
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 13,
+            ),
           ),
         ],
       ),

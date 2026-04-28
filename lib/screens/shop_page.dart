@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ShopPage extends StatefulWidget {
-  final bool isStatic; // true if used in BottomNav, false if pushed as new page
+  final bool isStatic;
   const ShopPage({super.key, this.isStatic = false});
 
   @override
@@ -9,16 +9,14 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  int _selectedCategoryIndex = 2; // Default to 'Elektronik' as per screenshot
+  int _selectedCategoryIndex = 0;
 
-  final List<Map<String, dynamic>> _categories = [
-    {'label': 'Semua', 'icon': null},
-    {'label': 'Sembako', 'icon': null},
-    {'label': 'Elektronik', 'icon': null},
-    {'label': 'Open PO', 'icon': Icons.auto_awesome},
-    {'label': 'Pabrik', 'icon': null},
-    {'label': 'ATK', 'icon': null},
-    {'label': 'Kesehatan', 'icon': null},
+  final List<String> _categories = [
+    'Semua',
+    'Sembako',
+    'Elektronik',
+    'ATK',
+    'Kesehatan',
   ];
 
   final List<Map<String, dynamic>> _products = [
@@ -26,69 +24,57 @@ class _ShopPageState extends State<ShopPage> {
       'name': 'Beras Premium 5kg',
       'price': 75000,
       'image': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': false,
-      'category': 'Sembako',
-    },
-    {
-      'name': 'Laptop Asus VivoBook',
-      'price': 8500000,
-      'image': 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': true,
-      'progress': 0.75,
-      'progressLabel': '75% Terpenuhi',
-      'estReady': '15 Mei 2026',
-      'category': 'Elektronik',
+      'isPO': false,
     },
     {
       'name': 'Minyak Goreng 2L',
-      'price': 40000,
+      'price': 35000,
       'image': 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': false,
-      'category': 'Sembako',
+      'isPO': false,
     },
     {
-      'name': 'Smartphone Samsung A54',
-      'price': 5200000,
-      'image': 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': true,
-      'progress': 0.60,
-      'progressLabel': '60% Terpenuhi',
-      'estReady': '20 Mei 2026',
-      'category': 'Elektronik',
+      'name': 'Smart TV 43 inch',
+      'price': 4500000,
+      'image': 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&q=80&w=400',
+      'isPO': true,
+      'progress': 0.65,
+      'est': '15 Mei',
     },
     {
-      'name': 'Mie Instan Paket 10pcs',
-      'price': 25000,
-      'image': 'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': false,
-      'category': 'Sembako',
-    },
-    {
-      'name': 'Headphone Sony WH-1000XM4',
+      'name': 'Kulkas 2 Pintu',
       'price': 3200000,
-      'image': 'https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': true,
+      'image': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
+      'isPO': true,
       'progress': 0.85,
-      'progressLabel': '85% Terpenuhi',
-      'estReady': '10 Mei 2026',
-      'category': 'Elektronik',
+      'est': '10 Mei',
     },
     {
-      'name': 'Air Fryer Digital 5L',
-      'price': 1250000,
-      'image': 'https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': true,
+      'name': 'Gula Pasir 1kg',
+      'price': 15000,
+      'image': 'https://images.unsplash.com/photo-1581006852262-e430369a4ea6?auto=format&fit=crop&q=80&w=400',
+      'isPO': false,
+    },
+    {
+      'name': 'Mesin Cuci 8kg',
+      'price': 2800000,
+      'image': 'https://images.unsplash.com/photo-1626806819282-2c1dc61a0e05?auto=format&fit=crop&q=80&w=400',
+      'isPO': true,
       'progress': 0.45,
-      'progressLabel': '45% Terpenuhi',
-      'estReady': '25 Mei 2026',
-      'category': 'Elektronik',
+      'est': '20 Mei 2026',
     },
     {
-      'name': 'Blender Philips HR2157',
-      'price': 450000,
-      'image': 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?auto=format&fit=crop&q=80&w=400',
-      'isPreOrder': false,
-      'category': 'Elektronik',
+      'name': 'Kopi Bubuk 250gr',
+      'price': 28000,
+      'image': 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400',
+      'isPO': false,
+    },
+    {
+      'name': 'Air Purifier',
+      'price': 1500000,
+      'image': 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&q=80&w=400',
+      'isPO': true,
+      'progress': 0.92,
+      'est': '05 Mei 2026',
     },
   ];
 
@@ -104,37 +90,37 @@ class _ShopPageState extends State<ShopPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: !widget.isStatic,
+        toolbarHeight: 70,
         title: _buildSearchHeader(),
         actions: [
           _buildCartBadge(),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
         children: [
-          const SizedBox(height: 8),
           _buildCategoryList(),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
           Expanded(
             child: _buildProductGrid(),
           ),
         ],
       ),
+      bottomNavigationBar: _buildBottomBanner(),
     );
   }
 
   Widget _buildSearchHeader() {
     return Container(
-      height: 45,
+      height: 48,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Cari produk...',
-          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: Colors.grey.shade500, size: 20),
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 22),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -147,17 +133,17 @@ class _ShopPageState extends State<ShopPage> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(Icons.shopping_cart_outlined, color: Colors.grey.shade800, size: 28),
+          Icon(Icons.shopping_cart_outlined, color: Colors.grey.shade700, size: 28),
           Positioned(
-            right: -4,
-            top: -4,
+            right: -6,
+            top: -6,
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: const BoxDecoration(
-                color: Color(0xFF14A96B),
+                color: Color(0xFFEF4444),
                 shape: BoxShape.circle,
               ),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
               child: const Text(
                 '3',
                 style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
@@ -171,54 +157,32 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Widget _buildCategoryList() {
-    return SizedBox(
-      height: 60,
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
-          final cat = _categories[index];
-          final isSelected = _selectedCategoryIndex == index;
-          final isOutline = cat['label'] == 'Open PO';
-
+          bool isSelected = _selectedCategoryIndex == index;
           return Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
+            child: GestureDetector(
               onTap: () => setState(() => _selectedCategoryIndex = index),
-              borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isOutline 
-                      ? Colors.transparent 
-                      : (isSelected ? const Color(0xFF14A96B) : const Color(0xFFF5F5F5)),
-                  borderRadius: BorderRadius.circular(10),
-                  border: isOutline 
-                      ? Border.all(color: const Color(0xFFF59E0B), width: 1.5) 
-                      : null,
+                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
-                  children: [
-                    if (cat['icon'] != null) ...[
-                      Icon(
-                        cat['icon'], 
-                        size: 16, 
-                        color: isOutline ? const Color(0xFFF59E0B) : Colors.white
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    Text(
-                      cat['label'],
-                      style: TextStyle(
-                        color: isOutline 
-                            ? const Color(0xFFF59E0B) 
-                            : (isSelected ? Colors.white : Colors.black87),
-                        fontWeight: isSelected || isOutline ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  _categories[index],
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),
@@ -229,40 +193,31 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Widget _buildProductGrid() {
-    String selectedLabel = _categories[_selectedCategoryIndex]['label'];
-    
-    List<Map<String, dynamic>> filteredProducts = _products.where((p) {
-      if (selectedLabel == 'Semua') return true;
-      if (selectedLabel == 'Open PO') return p['isPreOrder'] == true;
-      return p['category'] == selectedLabel;
-    }).toList();
-
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
+        childAspectRatio: 0.58,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: filteredProducts.length,
+      itemCount: _products.length,
       itemBuilder: (context, index) {
-        return _buildProductCard(filteredProducts[index]);
+        return _buildProductCard(_products[index]);
       },
     );
   }
 
   Widget _buildProductCard(Map<String, dynamic> product) {
-    bool isPO = product['isPreOrder'] ?? false;
-
+    bool isPO = product['isPO'];
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPO ? const Color(0xFFD1FAE5) : const Color(0xFFF3F4F6),
-          width: isPO ? 1.5 : 1,
-        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +226,7 @@ class _ShopPageState extends State<ShopPage> {
             child: Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   child: Image.network(
                     product['image'],
                     width: double.infinity,
@@ -283,14 +238,14 @@ class _ShopPageState extends State<ShopPage> {
                     top: 10,
                     left: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF97316),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
                         'PRE-ORDER',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -298,71 +253,78 @@ class _ShopPageState extends State<ShopPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   product['name'],
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF111827)),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
                 if (isPO) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        product['progressLabel'],
-                        style: const TextStyle(fontSize: 10, color: Color(0xFFF97316), fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  Text(
+                    '${(product['progress'] * 100).toInt()}% Terpenuhi',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
                   ),
                   const SizedBox(height: 4),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: product['progress'],
-                      backgroundColor: const Color(0xFFFFEDD5),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF84CC16)),
                       minHeight: 6,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Est. Ready: ${product['estReady']}',
-                    style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+                    'Est. Ready: ${product['est']}',
+                    style: const TextStyle(fontSize: 10, color: Color(0xFFF97316), fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                 ],
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _formatCurrency(product['price']),
-                        style: const TextStyle(
-                          fontSize: 16, 
-                          fontWeight: FontWeight.bold, 
-                          color: Color(0xFF14A96B)
-                        ),
-                      ),
+                Text(
+                  _formatCurrency(product['price']),
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0284C7),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF14A96B),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 18),
+                    child: Text(
+                      isPO ? 'Pesan PO' : 'Tambah',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBanner() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF84CC16),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: const Text(
+        'Toko Koperasi',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }

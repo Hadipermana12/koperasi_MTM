@@ -8,48 +8,61 @@ class PinjamanPage extends StatefulWidget {
 }
 
 class _PinjamanPageState extends State<PinjamanPage> {
-  double _jumlahPinjaman = 5000000;
+  double _jumlahPembiayaan = 5000000;
   int _jangkaWaktu = 6;
-  final double _bungaPerBulan = 0.005; // 0.5%
-  final TextEditingController _jumlahController = TextEditingController(text: "5.000.000");
+  String _jenisPembiayaan = 'Multiguna';
 
-  @override
-  void dispose() {
-    _jumlahController.dispose();
-    super.dispose();
+  String _formatNumber(double amount) {
+    return amount.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
   }
 
   String _formatCurrency(double amount) {
-    String formatted = amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-    return 'Rp $formatted';
+    return 'Rp ${_formatNumber(amount)}';
   }
 
   String _formatCurrencyWithDecimal(double amount) {
     String formatted = amount.toStringAsFixed(2);
     List<String> parts = formatted.split('.');
-    String wholeNumber = parts[0].replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+    String wholeNumber = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
     return 'Rp $wholeNumber,${parts[1]}';
   }
 
   @override
   Widget build(BuildContext context) {
-    double totalBunga = _jumlahPinjaman * _bungaPerBulan * _jangkaWaktu;
-    double totalPembayaran = _jumlahPinjaman + totalBunga;
-    double cicilanPerBulan = totalPembayaran / _jangkaWaktu;
+    double marginBulan = 0.005 * _jumlahPembiayaan; // 0.5%
+    double cicilanPokok = _jumlahPembiayaan / _jangkaWaktu;
+    double estimasiCicilan = cicilanPokok + marginBulan;
+    double totalPembiayaan = _jumlahPembiayaan + (marginBulan * _jangkaWaktu);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Pinjaman Koperasi',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
+        toolbarHeight: 80,
+        title: const Column(
+          children: [
+            Text(
+              'Pembiayaan',
+              style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.bold, fontSize: 22),
+            ),
+            Text(
+              'Koperasi',
+              style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.bold, fontSize: 22),
+            ),
+          ],
         ),
+        centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: Colors.grey.shade200, height: 1),
@@ -59,46 +72,51 @@ class _PinjamanPageState extends State<PinjamanPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLimitInfo(),
-            _buildJumlahPinjamanInput(),
-            const Divider(color: Color(0xFFEEEEEE), thickness: 8),
-            _buildJangkaWaktuSelector(),
-            _buildRincianPinjaman(totalBunga, cicilanPerBulan),
-            _buildSubmitButton(),
+            const SizedBox(height: 20),
+            _buildLimitBanner(),
+            const SizedBox(height: 24),
+            _buildJenisPembiayaan(),
+            const SizedBox(height: 24),
+            _buildJumlahPembiayaan(),
+            const SizedBox(height: 24),
+            _buildJangkaWaktu(),
+            const SizedBox(height: 24),
+            _buildRincianPembiayaan(marginBulan, cicilanPokok, estimasiCicilan, totalPembiayaan),
+            const SizedBox(height: 100), // Space for bottom button
           ],
         ),
       ),
+      bottomSheet: _buildBottomButton(),
     );
   }
 
-  Widget _buildLimitInfo() {
+  Widget _buildLimitBanner() {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF4F8FF),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD6E4FF)),
+          color: const Color(0xFFF0F9FF),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.5)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, color: Color(0xFF2F6BFF), size: 20),
+            const Icon(Icons.info_outline_rounded, color: Color(0xFF0284C7), size: 24),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Sisa Limit Pinjaman Anda',
-                  style: TextStyle(color: Color(0xFF1B3D7B), fontSize: 14, fontWeight: FontWeight.w500),
+            Expanded(
+              child: RichText(
+                text: const TextSpan(
+                  style: TextStyle(color: Color(0xFF0369A1), fontSize: 14),
+                  children: [
+                    TextSpan(text: 'Sisa Limit Pembiayaan Anda: '),
+                    TextSpan(
+                      text: 'Rp 10.000.000',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Rp 10.000.000',
-                  style: TextStyle(color: Color(0xFF2F6BFF), fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -106,346 +124,307 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  Widget _buildJumlahPinjamanInput() {
+  Widget _buildJenisPembiayaan() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Jumlah Pinjaman',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              const Text(
-                'Rp ',
-                style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF14A96B)),
-              ),
-              IntrinsicWidth(
-                child: TextFormField(
-                  controller: _jumlahController,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF14A96B)),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (val) {
-                    String clean = val.replaceAll(RegExp(r'[^0-9]'), '');
-                    if (clean.isEmpty) clean = '0';
-                    
-                    double parsed = double.parse(clean);
-                    setState(() {
-                      _jumlahPinjaman = parsed;
-                    });
-
-                    // Format ribuan
-                    String formatted = parsed.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-                    _jumlahController.value = TextEditingValue(
-                      text: formatted,
-                      selection: TextSelection.collapsed(offset: formatted.length),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           const Text(
-            'Ketik atau geser slider untuk mengatur jumlah',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            'Pilih Jenis Pembiayaan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
           ),
           const SizedBox(height: 16),
-          SliderTheme(
-            data: SliderThemeData(
-              activeTrackColor: const Color(0xFF14A96B),
-              inactiveTrackColor: Colors.grey.shade300,
-              thumbColor: const Color(0xFF14A96B),
-              overlayColor: const Color(0xFF14A96B).withOpacity(0.2),
-              trackHeight: 8,
-            ),
-            child: Slider(
-              value: _jumlahPinjaman.clamp(1000000.0, 10000000.0),
-              min: 1000000,
-              max: 10000000,
-              divisions: 90,
-              onChanged: (value) {
-                setState(() {
-                  _jumlahPinjaman = value;
-                  String formatted = value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-                  _jumlahController.text = formatted;
-                });
-              },
-            ),
-          ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Rp 1jt', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              Text('Rp 10jt', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            children: [
+              _buildTypeCard('Multiguna', 'Rp 10.0jt'),
+              const SizedBox(width: 12),
+              _buildTypeCard('Syariah', 'Rp 15.0jt'),
+              const SizedBox(width: 12),
+              _buildTypeCard('Darurat', 'Sesuai harga barang', subLabel: true),
             ],
           ),
-          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _buildJangkaWaktuSelector() {
+  Widget _buildTypeCard(String title, String subtitle, {bool subLabel = false}) {
+    bool isSelected = _jenisPembiayaan == title;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _jenisPembiayaan = title),
+        child: Container(
+          height: 120,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFF0F9FF) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE5E7EB),
+              width: isSelected ? 1.5 : 1,
+            ),
+            boxShadow: isSelected ? [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
+            ] : [],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF374151),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isSelected ? const Color(0xFF0369A1) : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJumlahPembiayaan() {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Jumlah Pembiayaan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+              ],
+            ),
+            child: Column(
+              children: [
+                Text(
+                  _formatCurrency(_jumlahPembiayaan),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                ),
+                const SizedBox(height: 16),
+                SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: const Color(0xFFE5E7EB),
+                    inactiveTrackColor: const Color(0xFFE5E7EB),
+                    thumbColor: const Color(0xFF0284C7),
+                    overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                    trackHeight: 10,
+                  ),
+                  child: Slider(
+                    value: _jumlahPembiayaan,
+                    min: 1000000,
+                    max: 10000000,
+                    onChanged: (val) => setState(() => _jumlahPembiayaan = val),
+                  ),
+                ),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Rp 1jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                    Text('Rp 10.0jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJangkaWaktu() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Jangka Waktu',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildDurationOption(3),
+              _buildTenureCard(3),
               const SizedBox(width: 12),
-              _buildDurationOption(6),
+              _buildTenureCard(6),
               const SizedBox(width: 12),
-              _buildDurationOption(12),
+              _buildTenureCard(12),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDurationOption(int months) {
-    bool isSelected = _jangkaWaktu == months;
+  Widget _buildTenureCard(int value) {
+    bool isSelected = _jangkaWaktu == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _jangkaWaktu = months;
-          });
-        },
+        onTap: () => setState(() => _jangkaWaktu = value),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF14A96B) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF14A96B) : Colors.grey.shade300,
-            ),
-            boxShadow: isSelected
-                ? [BoxShadow(color: const Color(0xFF14A96B).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
-                : [],
+            color: isSelected ? const Color(0xFF84CC16) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: isSelected ? [
+              BoxShadow(color: const Color(0xFF84CC16).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
+            ] : [],
           ),
-          alignment: Alignment.center,
-          child: Text(
-            '$months Bulan',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : Colors.black87,
-            ),
+          child: Column(
+            children: [
+              Text(
+                '$value',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF374151),
+                ),
+              ),
+              Text(
+                'Bulan',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildRincianPinjaman(double totalBunga, double cicilanPerBulan) {
+  Widget _buildRincianPembiayaan(double margin, double pokok, double estimasi, double total) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2FFF8),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFC7F3DB)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: const [
-                Icon(Icons.receipt_long_outlined, color: Color(0xFF14A96B), size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Rincian Pinjaman',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Rincian Pembiayaan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRincianRow('Pokok Pembiayaan', _formatCurrency(_jumlahPembiayaan), isBold: true),
+                const SizedBox(height: 12),
+                _buildRincianRow('Bagi Hasil / Margin (0.5%)', '${_formatCurrency(margin)}/bln', isBold: true),
+                const SizedBox(height: 12),
+                _buildRincianRow('Cicilan Pokok per Bulan', _formatCurrencyWithDecimal(pokok), isBold: true),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Divider(),
+                ),
+                const Text(
+                  'Estimasi Cicilan per Bulan',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Selama $_jangkaWaktu bulan',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                    ),
+                    Text(
+                      _formatCurrencyWithDecimal(estimasi),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFCCB),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Pembiayaan',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF3F6212)),
+                      ),
+                      Text(
+                        _formatCurrency(total),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF3F6212)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildRincianRow('Pokok Pinjaman', _formatCurrency(_jumlahPinjaman)),
-                  const SizedBox(height: 12),
-                  _buildRincianRow('Bunga (0.5% per bulan)', _formatCurrency(totalBunga)),
-                  const SizedBox(height: 12),
-                  _buildRincianRow('Jangka Waktu', '$_jangkaWaktu Bulan'),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Divider(color: Color(0xFFEEEEEE), height: 1),
-                  ),
-                  const Text(
-                    'Estimasi Cicilan per Bulan',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatCurrencyWithDecimal(cicilanPerBulan),
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF14A96B)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                '* Perhitungan ini bersifat estimasi dan dapat berubah',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRincianRow(String label, String value) {
+  Widget _buildRincianRow(String label, String value, {bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Colors.black54)),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: const Color(0xFF111827),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSubmitButton() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                _tampilkanKonfirmasiPinjaman();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF14A96B),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              icon: const Icon(Icons.check_circle_outline, size: 22),
-              label: const Text('Ajukan Pinjaman Sekarang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Dengan mengajukan, Anda menyetujui syarat dan ketentuan pinjaman koperasi',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
-        ],
+  Widget _buildBottomButton() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF84CC16),
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+        ),
+        child: const Text('Pembiayaan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ),
-    );
-  }
-
-  void _tampilkanKonfirmasiPinjaman() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Konfirmasi Pinjaman', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('Apakah Anda yakin ingin mengajukan pinjaman sebesar ${_formatCurrency(_jumlahPinjaman)} dengan jangka waktu $_jangkaWaktu bulan?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Tutup dialog konfirmasi
-                
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      contentPadding: const EdgeInsets.all(24),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle, color: Color(0xFF14A96B), size: 72),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Berhasil Pinjam!',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Pengajuan pinjaman koperasi Anda telah diterima dan akan segera diproses oleh tim kami.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14, color: Colors.black54),
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context); 
-                                Navigator.pop(context);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF14A96B),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text('Kembali ke Beranda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF14A96B),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text('Ya, Ajukan', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
     );
   }
 }

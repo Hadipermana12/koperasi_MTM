@@ -5,7 +5,7 @@ allprojects {
     }
 }
 
-rootProject.layout.buildDirectory.value(rootProject.layout.projectDirectory.dir("../../build"))
+rootProject.layout.buildDirectory.value(rootProject.layout.projectDirectory.dir("../build"))
 
 subprojects {
     project.layout.buildDirectory.value(rootProject.layout.buildDirectory.map { it.dir(project.name) })

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class PinjamanPage extends StatefulWidget {
   const PinjamanPage({super.key});
@@ -13,6 +15,8 @@ class _PinjamanPageState extends State<PinjamanPage> {
   int _jangkaWaktu = 6;
   String _jenisPembiayaan = 'Multiguna';
   bool _isOverLimit = false;
+  bool _isDocumentUploaded = false;
+  String _uploadedFileName = '';
 
   final Map<String, double> _limits = {
     'Multiguna': 10000000,
@@ -121,7 +125,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            _buildLimitBanner(),
+            _buildLimitBanner(currentLimit),
             const SizedBox(height: 24),
             _buildJenisPembiayaan(),
             const SizedBox(height: 24),
@@ -130,6 +134,8 @@ class _PinjamanPageState extends State<PinjamanPage> {
             _buildJangkaWaktu(),
             const SizedBox(height: 24),
             _buildRincianPembiayaan(marginBulan, cicilanPokok, estimasiCicilan, totalPembiayaan),
+            const SizedBox(height: 24),
+            _buildUploadSection(),
             const SizedBox(height: 100),
           ],
         ),
@@ -138,7 +144,91 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  Widget _buildLimitBanner() {
+  Widget _buildUploadSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Upload Dokumen Pendukung',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isDocumentUploaded = true;
+                _uploadedFileName = 'dokumen_pembiayaan_${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}.pdf';
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _isDocumentUploaded ? const Color(0xFF14A96B) : const Color(0xFFE5E7EB),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _isDocumentUploaded ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _isDocumentUploaded ? Icons.check_rounded : Icons.file_upload_outlined,
+                      color: _isDocumentUploaded ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isDocumentUploaded ? 'Dokumen Berhasil Terunggah' : 'Pilih File Dokumen',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: _isDocumentUploaded ? const Color(0xFF16A34A) : const Color(0xFF374151),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _isDocumentUploaded ? _uploadedFileName : 'Upload KTP/Slip Gaji (Maks. 5MB)',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_isDocumentUploaded)
+                    const Icon(Icons.refresh_rounded, color: Color(0xFF9CA3AF), size: 20),
+                ],
+              ),
+            ),
+          ),
+          if (!_isDocumentUploaded)
+            const Padding(
+              padding: EdgeInsets.only(top: 8, left: 4),
+              child: Text(
+                '* Wajib mengunggah dokumen pendukung untuk verifikasi',
+                style: TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w500),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitBanner(double limit) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Container(
@@ -154,13 +244,13 @@ class _PinjamanPageState extends State<PinjamanPage> {
             const SizedBox(width: 12),
             Expanded(
               child: RichText(
-                text: const TextSpan(
-                  style: TextStyle(color: Color(0xFF0369A1), fontSize: 14),
+                text: TextSpan(
+                  style: const TextStyle(color: Color(0xFF0369A1), fontSize: 14),
                   children: [
-                    TextSpan(text: 'Sisa Limit Pembiayaan Anda: '),
+                    const TextSpan(text: 'Sisa Limit Pembiayaan Anda: '),
                     TextSpan(
-                      text: 'Rp 10.000.000',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      text: _formatCurrency(limit),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -511,20 +601,80 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
+  void _showSuccessDialog() {
+    final authProvider = context.read<AuthProvider>();
+
+    // Catat aktifitas pengajuan pembiayaan ke riwayat
+    authProvider.addManualTransaction(
+      _jumlahPembiayaan,
+      'PENGAJUAN ${_jenisPembiayaan.toUpperCase()}',
+      ['Tenor $_jangkaWaktu Bulan', 'Dokumen: $_uploadedFileName']
+    );
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF14A96B), size: 80),
+            const SizedBox(height: 20),
+            const Text('Pengajuan Terkirim!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            const Text(
+              'Pengajuan pembiayaan Anda sedang dalam proses verifikasi oleh admin. Kami akan memberikan notifikasi segera.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Back to home
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Kembali ke Dashboard'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomButton() {
     return Container(
-      width: double.infinity,
-      color: _isOverLimit ? Colors.grey : const Color(0xFF84CC16),
-      child: ElevatedButton(
-        onPressed: _isOverLimit ? null : () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))
+        ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: (_isOverLimit || !_isDocumentUploaded) ? null : _showSuccessDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF14A96B),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey.shade300,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            child: const Text('Ajukan Pembiayaan Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
         ),
-        child: const Text('Pembiayaan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ),
     );
   }

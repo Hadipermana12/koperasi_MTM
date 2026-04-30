@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'shop_page.dart';
 import 'activity_page.dart';
+import 'profile_page.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -17,7 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
     const HomePage(),
     const ShopPage(isStatic: true),
     const ActivityPage(),
-    const Center(child: Text('Profile Page - Coming Soon')),
+    const ProfilePage(),
   ];
 
   @override

@@ -25,27 +25,53 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.login(
-      _npkController.text,
-      _passwordController.text,
-    ).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+    try {
+      final success = await authProvider.login(
+        _npkController.text,
+        _passwordController.text,
       );
-      return false;
-    });
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainLayout()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('NPK atau Password salah (Coba NPK: 123, Pass: admin)')),
-      );
+      
+      if (!mounted) return;
+      
+      if (success) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainLayout()),
+        );
+      } else {
+        _showErrorDialog('NPK atau Password salah');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorDialog(e.toString().replaceAll("Exception: ", ""));
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Login Gagal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(color: Color(0xFF4B5563))),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -58,39 +84,43 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F7FF),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          children: [
-            const SizedBox(height: 80),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1296C4), Color(0xFF0D47A1)], // Matching splash theme
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+            const SizedBox(height: 40),
             // Logo
             Container(
-              width: 120,
-              height: 120,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
+                shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    color: Colors.white.withValues(alpha: 0.2),
+                    blurRadius: 50,
+                    spreadRadius: 20,
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/logologin.jpg',
-                  fit: BoxFit.cover,
-                ),
+              child: Image.asset(
+                'assets/images/logologin.png',
+                width: 350, // Enlarged logo
+                fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             const Text(
               'Selamat Datang di',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 6),
             RichText(
@@ -98,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   TextSpan(
                     text: 'KMMA ',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1296C4)),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
                   ),
                   TextSpan(
                     text: 'One',
@@ -110,9 +140,9 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 8),
             const Text(
               'Sinergi Untuk Sejahtera',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: Colors.white70),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             // Input Fields
             _buildInputField(
               label: 'NPK',
@@ -128,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
               icon: Icons.lock_outline_rounded,
               isPassword: true,
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             // Masuk Sekarang Button
             Consumer<AuthProvider>(
               builder: (context, auth, child) {
@@ -137,15 +167,15 @@ class _LoginPageState extends State<LoginPage> {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF1296C4), Color(0xFF0B7BA1)],
+                      colors: [Color(0xFF22C55E), Color(0xFF16A34A)], // Bright green gradient
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1296C4).withValues(alpha: 0.3),
-                        blurRadius: 10,
+                        color: const Color(0xFF22C55E).withValues(alpha: 0.4),
+                        blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -188,13 +218,13 @@ class _LoginPageState extends State<LoginPage> {
                   height: 56,
                   child: OutlinedButton.icon(
                     onPressed: auth.isLoading ? null : _handleLogin,
-                    icon: const Icon(Icons.fingerprint, color: Color(0xFF84CC16), size: 28),
+                    icon: const Icon(Icons.fingerprint, color: Colors.white, size: 28),
                     label: const Text(
                       'Login dengan Biometrik',
-                      style: TextStyle(color: Color(0xFF84CC16), fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF84CC16), width: 1.5),
+                      side: const BorderSide(color: Colors.white, width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
@@ -206,14 +236,14 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Belum jadi anggota? ', style: TextStyle(color: Color(0xFF6B7280), fontSize: 13)),
+                const Text('Belum jadi anggota? ', style: TextStyle(color: Colors.white70, fontSize: 13)),
                 GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const RegisterPage()),
                   ),
                   child: const Text(
                     'Daftar Anggota Koperasi',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1296C4), fontSize: 13),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
                   ),
                 ),
               ],
@@ -221,14 +251,15 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 12),
             const Text(
               '© 2026 KMMA ONE. All rights reserved.',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+              style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 30),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildInputField({
     required String label,
@@ -242,38 +273,39 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF374151)),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: isPassword && !_isPasswordVisible,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-            prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 20),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+            prefixIcon: Icon(icon, color: Colors.white70, size: 22),
             suffixIcon: isPassword ? IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                color: Colors.grey.shade400,
-                size: 20,
+                color: Colors.white70,
+                size: 22,
               ),
               onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
             ) : null,
             filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            fillColor: Colors.white.withValues(alpha: 0.1), // Glass effect
+            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1296C4)),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.white, width: 1.5),
             ),
           ),
         ),

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui' as ui;
+import 'dart:convert';
+import 'dart:typed_data';
 import '../providers/auth_provider.dart';
+import '../services/address_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -22,12 +26,107 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordVisible = false;
   List<Offset?> _signaturePoints = [];
 
+  final AddressService _addressService = AddressService();
+
+  List<Map<String, dynamic>> _provinsiList = [];
+  List<Map<String, dynamic>> _kabupatenList = [];
+  List<Map<String, dynamic>> _kecamatanList = [];
+  List<Map<String, dynamic>> _kelurahanList = [];
+
+  Map<String, dynamic>? _selectedProvinsi;
+  Map<String, dynamic>? _selectedKabupaten;
+  Map<String, dynamic>? _selectedKecamatan;
+  Map<String, dynamic>? _selectedKelurahan;
+  
+  bool _isLoadingAddress = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProvinsi();
+  }
+
+  Future<void> _loadProvinsi() async {
+    setState(() => _isLoadingAddress = true);
+    final data = await _addressService.getProvinsi();
+    if (mounted) {
+      setState(() {
+        _provinsiList = data;
+        _isLoadingAddress = false;
+      });
+    }
+  }
+
+  void _onProvinsiChanged(Map<String, dynamic>? val) async {
+    setState(() {
+      _selectedProvinsi = val;
+      _selectedKabupaten = null;
+      _selectedKecamatan = null;
+      _selectedKelurahan = null;
+      _kabupatenList = [];
+      _kecamatanList = [];
+      _kelurahanList = [];
+    });
+    if (val != null) {
+      setState(() => _isLoadingAddress = true);
+      final data = await _addressService.getKabupaten(val['id']);
+      if (mounted) {
+        setState(() {
+          _kabupatenList = data;
+          _isLoadingAddress = false;
+        });
+      }
+    }
+  }
+
+  void _onKabupatenChanged(Map<String, dynamic>? val) async {
+    setState(() {
+      _selectedKabupaten = val;
+      _selectedKecamatan = null;
+      _selectedKelurahan = null;
+      _kecamatanList = [];
+      _kelurahanList = [];
+    });
+    if (val != null) {
+      setState(() => _isLoadingAddress = true);
+      final data = await _addressService.getKecamatan(val['id']);
+      if (mounted) {
+        setState(() {
+          _kecamatanList = data;
+          _isLoadingAddress = false;
+        });
+      }
+    }
+  }
+
+  void _onKecamatanChanged(Map<String, dynamic>? val) async {
+    setState(() {
+      _selectedKecamatan = val;
+      _selectedKelurahan = null;
+      _kelurahanList = [];
+    });
+    if (val != null) {
+      setState(() => _isLoadingAddress = true);
+      final data = await _addressService.getKelurahan(val['id']);
+      if (mounted) {
+        setState(() {
+          _kelurahanList = data;
+          _isLoadingAddress = false;
+        });
+      }
+    }
+  }
+
   Future<void> _handleRegister() async {
     if (_nameController.text.isEmpty ||
         _npkController.text.isEmpty ||
         _deptController.text.isEmpty ||
         _accountController.text.isEmpty ||
         _addressController.text.isEmpty ||
+        _selectedProvinsi == null ||
+        _selectedKabupaten == null ||
+        _selectedKecamatan == null ||
+        _selectedKelurahan == null ||
         _ktpController.text.isEmpty ||
         _phoneController.text.isEmpty ||
         _passwordController.text.isEmpty) {
@@ -44,21 +143,98 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    final authProvider = context.read<AuthProvider>();
-    await authProvider.register({
-      'npk': _npkController.text,
-      'name': _nameController.text,
-      'password': _passwordController.text,
-      'ktp': _ktpController.text,
-      'address': _addressController.text,
-      'phone': _phoneController.text,
-      'dept': _deptController.text,
-      'accountNumber': _accountController.text,
-      'registeredAt': DateTime.now().toIso8601String(),
-    });
+    final String combinedAddress = [
+      _addressController.text.trim(),
+      _selectedKelurahan?['name'] != null ? 'Kel. ${_selectedKelurahan!['name']}' : null,
+      _selectedKecamatan?['name'] != null ? 'Kec. ${_selectedKecamatan!['name']}' : null,
+      _selectedKabupaten?['name'],
+      _selectedProvinsi?['name'] != null ? 'Prov. ${_selectedProvinsi!['name']}' : null,
+    ].where((e) => e != null && e!.isNotEmpty).join(', ');
 
-    if (!mounted) return;
-    _showSuccessDialog();
+    final signatureBase64 = await _getSignatureBase64();
+    if (signatureBase64 == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tanda tangan gagal diproses')));
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+    try {
+      await authProvider.register({
+        // API Requirements
+        'npk': _npkController.text,
+        'name': _nameController.text,
+        'password': _passwordController.text,
+        'phoneNumber': _phoneController.text,
+        'bankInfo': {
+          'bankName': 'Koperasi', // Default as it's not in the UI
+          'accountNumber': _accountController.text,
+          'accountName': _nameController.text,
+        },
+        // Local/Legacy data for profile page
+        'noKtp': _ktpController.text,
+        'address': combinedAddress,
+        'section': _deptController.text,
+        'accountNumber': _accountController.text,
+        'registeredAt': DateTime.now().toIso8601String(),
+        'signature': signatureBase64,
+      });
+
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorDialog(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  Future<String?> _getSignatureBase64() async {
+    if (_signaturePoints.isEmpty) return null;
+    try {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      canvas.drawRect(const Rect.fromLTWH(0, 0, 300, 150), Paint()..color = Colors.white);
+      final painter = SignaturePainter(points: _signaturePoints);
+      painter.paint(canvas, const Size(300, 150));
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(300, 150);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData != null) {
+        final base64String = base64Encode(byteData.buffer.asUint8List());
+        return 'data:image/png;base64,$base64String';
+      }
+    } catch (e) {
+      debugPrint("Error generating signature image: $e");
+    }
+    return null;
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Pendaftaran Gagal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(color: Color(0xFF4B5563))),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSuccessDialog() {
@@ -137,7 +313,16 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 20),
             _buildInputField(label: 'Nama Lengkap', hint: 'Sesuai KTP', controller: _nameController, icon: Icons.person_outline),
             _buildInputField(label: 'No. KTP', hint: '16 Digit NIK', controller: _ktpController, icon: Icons.badge_outlined, keyboardType: TextInputType.number),
-            _buildInputField(label: 'Alamat Domisili', hint: 'Alamat Lengkap', controller: _addressController, icon: Icons.home_outlined, maxLines: 2),
+            
+            const Text('Alamat Lengkap', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
+            const SizedBox(height: 8),
+            _buildDropdown(label: 'Provinsi', hint: 'Pilih Provinsi', items: _provinsiList, selectedValue: _selectedProvinsi, onChanged: _onProvinsiChanged, icon: Icons.map_outlined),
+            _buildDropdown(label: 'Kabupaten/Kota', hint: 'Pilih Kabupaten/Kota', items: _kabupatenList, selectedValue: _selectedKabupaten, onChanged: _onKabupatenChanged, icon: Icons.location_city_outlined),
+            _buildDropdown(label: 'Kecamatan', hint: 'Pilih Kecamatan', items: _kecamatanList, selectedValue: _selectedKecamatan, onChanged: _onKecamatanChanged, icon: Icons.holiday_village_outlined),
+            _buildDropdown(label: 'Kelurahan/Desa', hint: 'Pilih Kelurahan/Desa', items: _kelurahanList, selectedValue: _selectedKelurahan, onChanged: (val) => setState(() => _selectedKelurahan = val), icon: Icons.home_work_outlined),
+            if (_isLoadingAddress) const Padding(padding: EdgeInsets.only(bottom: 16), child: Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
+            
+            _buildInputField(label: 'Jalan/Blok/RT/RW', hint: 'Detail Jalan / Gang / Nomor Rumah', controller: _addressController, icon: Icons.home_outlined, maxLines: 2),
             _buildInputField(label: 'No. Handphone', hint: '0812xxxx', controller: _phoneController, icon: Icons.phone_android_outlined, keyboardType: TextInputType.phone),
 
             const SizedBox(height: 32),
@@ -155,13 +340,55 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 32),
             const Text('Tanda Tangan Anggota', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF374151))),
             const SizedBox(height: 12),
-            _buildSignaturePad(),
+            _buildSignatureSection(),
 
             const SizedBox(height: 48),
             _buildSubmitButton(),
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String hint,
+    required List<Map<String, dynamic>> items,
+    required Map<String, dynamic>? selectedValue,
+    required ValueChanged<Map<String, dynamic>?> onChanged,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<Map<String, dynamic>>(
+            value: selectedValue,
+            isExpanded: true,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: Icon(icon, color: const Color(0xFF0284C7), size: 20),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0284C7))),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem<Map<String, dynamic>>(
+                value: item,
+                child: Text(item['name'], style: const TextStyle(fontSize: 14)),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
@@ -208,47 +435,128 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildSignaturePad() {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Stack(
-        children: [
-          GestureDetector(
-            onPanStart: (details) {
-              setState(() {
-                _signaturePoints.add(details.localPosition);
-              });
-            },
-            onPanUpdate: (details) {
-              setState(() {
-                _signaturePoints.add(details.localPosition);
-              });
-            },
-            onPanEnd: (details) => _signaturePoints.add(null),
-            child: CustomPaint(
-              painter: SignaturePainter(points: _signaturePoints),
-              size: Size.infinite,
+  Widget _buildSignatureSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_signaturePoints.isNotEmpty) ...[
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CustomPaint(
+                painter: SignaturePainter(points: _signaturePoints),
+                size: Size.infinite,
+              ),
             ),
           ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: TextButton.icon(
-              onPressed: () => setState(() => _signaturePoints = []),
-              icon: const Icon(Icons.refresh, size: 16, color: Colors.red),
-              label: const Text('Reset', style: TextStyle(color: Colors.red, fontSize: 12)),
-            ),
-          ),
-          if (_signaturePoints.isEmpty)
-            const Center(child: Text('Tanda tangan langsung di sini', style: TextStyle(color: Colors.grey, fontSize: 13))),
+          const SizedBox(height: 12),
         ],
-      ),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _showSignatureDialog,
+            icon: const Icon(Icons.draw, color: Color(0xFF0284C7)),
+            label: Text(
+              _signaturePoints.isEmpty ? 'Buat Tanda Tangan' : 'Ubah Tanda Tangan',
+              style: const TextStyle(color: Color(0xFF0284C7), fontWeight: FontWeight.bold),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFF0284C7)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSignatureDialog() {
+    List<Offset?> tempPoints = List.from(_signaturePoints);
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Buat Tanda Tangan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: 250,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onPanStart: (details) {
+                          setStateDialog(() {
+                            tempPoints.add(details.localPosition);
+                          });
+                        },
+                        onPanUpdate: (details) {
+                          setStateDialog(() {
+                            tempPoints.add(details.localPosition);
+                          });
+                        },
+                        onPanEnd: (details) => tempPoints.add(null),
+                        child: CustomPaint(
+                          painter: SignaturePainter(points: tempPoints),
+                          size: Size.infinite,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: TextButton.icon(
+                          icon: const Icon(Icons.refresh, color: Colors.red, size: 16),
+                          label: const Text('Reset', style: TextStyle(color: Colors.red)),
+                          onPressed: () => setStateDialog(() => tempPoints.clear()),
+                        ),
+                      ),
+                      if (tempPoints.isEmpty)
+                        const Center(child: Text('Tanda tangan di sini', style: TextStyle(color: Colors.grey))),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _signaturePoints = List.from(tempPoints);
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0284C7),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Simpan'),
+                ),
+              ],
+            );
+          }
+        );
+      }
     );
   }
 

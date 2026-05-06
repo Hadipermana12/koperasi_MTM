@@ -1,10 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dio/dio.dart';
 import '../models/user_model.dart';
 import '../models/transaction_model.dart';
+import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  final ApiService _apiService = ApiService();
+  final _storage = const FlutterSecureStorage();
+  
   UserModel? _user;
   bool _isLoading = false;
   final List<TransactionModel> _transactions = [];
@@ -22,10 +28,32 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Load Users
+    // Load Users from Local (Legacy/Cache)
     final usersJson = prefs.getString('registered_users');
     if (usersJson != null) {
       _registeredUsers = Map<String, Map<String, dynamic>>.from(json.decode(usersJson));
+    }
+
+    // Check for existing token
+    final token = await _apiService.getToken();
+    if (token != null) {
+      try {
+        final response = await _apiService.getProfile();
+        if (response.statusCode == 200) {
+          final userData = response.data['data'];
+          _user = UserModel(
+            npk: userData['npk'],
+            name: userData['name'],
+            limitBelanja: 1500000, // Still hardcoded for now or get from API if available
+            terpakai: 0,
+            bankName: userData['bankInfo']?['bankName'],
+            accountNumber: userData['bankInfo']?['accountNumber'],
+          );
+        }
+      } catch (e) {
+        // Token might be invalid
+        await _apiService.clearTokens();
+      }
     }
 
     // Load Transactions
@@ -68,29 +96,68 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String npk, String password) async {
     _isLoading = true;
     notifyListeners();
-    await Future.delayed(const Duration(seconds: 1));
 
-    if (_registeredUsers.containsKey(npk) && _registeredUsers[npk]!['password'] == password) {
-      final data = _registeredUsers[npk]!;
-      _user = UserModel(
-        npk: npk,
-        name: data['name'],
-        limitBelanja: 1500000,
-        terpakai: 0,
-        bankName: 'BCA (Simulasi)',
-        accountNumber: data['accountNumber'] ?? '-',
-        simpananWajib: 100000,
-        simpananSukarela: 500000,
-      );
+    try {
+      final response = await _apiService.login(npk, password);
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        final userMap = data['user'];
+
+        if (userMap['isActive'] == false || userMap['isActive'] == 0 || userMap['isActive'] == "0" || userMap['isActive'] == "false") {
+            _isLoading = false;
+            notifyListeners();
+            throw Exception("Akun anda belum diverifikasi oleh admin");
+        }
+
+        final accessToken = data['accessToken'];
+        final refreshToken = data['refreshToken'];
+
+        await _apiService.saveTokens(accessToken, refreshToken);
+
+        _user = UserModel(
+          npk: userMap['npk'],
+          name: userMap['name'],
+          limitBelanja: 1500000,
+          terpakai: 0,
+          bankName: 'BCA (Connected)',
+          accountNumber: '-',
+          simpananWajib: 100000,
+          simpananSukarela: 500000,
+        );
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } on DioException catch (e) {
       _isLoading = false;
       notifyListeners();
-      return true;
+      
+      String errorMsg = "NPK atau Password salah.";
+      if (e.response != null && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map) {
+          if (data['message'] != null) {
+            errorMsg = data['message'];
+          } else if (data['error'] != null) {
+            errorMsg = data['error'];
+          }
+        }
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      if (e.toString().contains("Akun anda belum diverifikasi")) {
+          rethrow;
+      }
+      debugPrint('Login error: $e');
     }
 
+    // Fallback to simulation for development if needed, but the objective is real integration
     if (npk == '123' && password == 'admin') {
       _user = UserModel(
         npk: npk,
-        name: 'Putri Permata',
+        name: 'Putri Permata (Simulasi)',
         limitBelanja: 1500000,
         terpakai: 0,
         bankName: 'BCA',
@@ -112,14 +179,41 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final response = await _apiService.register(userData);
+      if (response.statusCode == 201) {
+        // Also save locally for legacy support if needed
+        final String npk = userData['npk'];
+        _registeredUsers[npk] = userData;
+        await _saveData();
 
-    final String npk = userData['npk'];
-    _registeredUsers[npk] = userData;
-    await _saveData();
-
-    _isLoading = false;
-    notifyListeners();
+        _isLoading = false;
+        notifyListeners();
+        return;
+      } else {
+        throw Exception("Gagal mendaftar. Silakan coba lagi.");
+      }
+    } on DioException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      
+      String errorMsg = "Terjadi kesalahan jaringan atau server.";
+      if (e.response != null && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map) {
+          if (data['message'] != null) {
+            errorMsg = data['message'];
+          } else if (data['error'] != null) {
+            errorMsg = data['error'];
+          }
+        }
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      throw Exception("Terjadi kesalahan tidak terduga.");
+    }
   }
 
   String generateRegistrationMessage(String npk, String name) {
@@ -131,9 +225,9 @@ class AuthProvider extends ChangeNotifier {
         "Mohon bantuannya untuk verifikasi akun saya. Terima kasih.";
   }
 
-  void logout() {
+  void logout() async {
     _user = null;
-    // Jangan bersihkan _transactions agar riwayat tetap ada di HP saat login kembali
+    await _apiService.clearTokens();
     notifyListeners();
   }
 

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/loan_provider.dart';
+import 'services/api_service.dart';
+import 'services/loan_service.dart';
 import 'screens/splash_screen.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,11 +13,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
 
+  final apiService = ApiService();
+  final loanService = LoanService(apiService);
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => LoanProvider(loanService)),
       ],
       child: const MyApp(),
     ),

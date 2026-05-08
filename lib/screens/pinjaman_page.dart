@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/loan_provider.dart';
+import '../models/loan_model.dart';
 
 class PinjamanPage extends StatefulWidget {
   const PinjamanPage({super.key});
@@ -10,30 +12,40 @@ class PinjamanPage extends StatefulWidget {
 }
 
 class _PinjamanPageState extends State<PinjamanPage> {
-  final TextEditingController _amountController = TextEditingController(text: "5.000.000");
-  double _jumlahPembiayaan = 5000000;
+  final TextEditingController _amountController = TextEditingController(text: "1.000.000");
+  final TextEditingController _purposeController = TextEditingController();
+  double _jumlahPembiayaan = 1000000;
   int _jangkaWaktu = 6;
-  String _jenisPembiayaan = 'Multiguna';
+  LoanCategory? _selectedCategory;
   bool _isOverLimit = false;
   bool _isDocumentUploaded = false;
   String _uploadedFileName = '';
-
-  final Map<String, double> _limits = {
-    'Multiguna': 10000000,
-    'Syariah': 15000000,
-    'Darurat': 10000000, // Based on banner limit in mockup
-  };
 
   @override
   void initState() {
     super.initState();
     _amountController.addListener(_onAmountChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LoanProvider>().fetchCategories().then((_) {
+        final lp = context.read<LoanProvider>();
+        if (lp.error != null) {
+          _showErrorDialog(lp.error!);
+        }
+        final categories = lp.categories;
+        if (categories.isNotEmpty) {
+          setState(() {
+            _selectedCategory = categories.first;
+          });
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
+    _purposeController.dispose();
     super.dispose();
   }
 
@@ -42,7 +54,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
     if (text.isEmpty) text = '0';
     double? val = double.tryParse(text);
     if (val != null) {
-      double currentLimit = _limits[_jenisPembiayaan] ?? 10000000;
+      double currentLimit = _selectedCategory?.maxAmount ?? 10000000;
       setState(() {
         _jumlahPembiayaan = val;
         _isOverLimit = val > currentLimit;
@@ -85,9 +97,11 @@ class _PinjamanPageState extends State<PinjamanPage> {
 
   @override
   Widget build(BuildContext context) {
-    double currentLimit = _limits[_jenisPembiayaan] ?? 10000000;
+    final loanProvider = context.watch<LoanProvider>();
+    double currentLimit = _selectedCategory?.maxAmount ?? 10000000;
+    double interestRate = (_selectedCategory?.interestRate ?? 0.5) / 100;
     
-    double marginBulan = 0.005 * _jumlahPembiayaan; // 0.5%
+    double marginBulan = interestRate * _jumlahPembiayaan;
     double cicilanPokok = _jumlahPembiayaan / _jangkaWaktu;
     double estimasiCicilan = cicilanPokok + marginBulan;
     double totalPembiayaan = _jumlahPembiayaan + (marginBulan * _jangkaWaktu);
@@ -120,27 +134,63 @@ class _PinjamanPageState extends State<PinjamanPage> {
           child: Container(color: Colors.grey.shade200, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            _buildLimitBanner(currentLimit),
-            const SizedBox(height: 24),
-            _buildJenisPembiayaan(),
-            const SizedBox(height: 24),
-            _buildJumlahPembiayaanSection(currentLimit),
-            const SizedBox(height: 24),
-            _buildJangkaWaktu(),
-            const SizedBox(height: 24),
-            _buildRincianPembiayaan(marginBulan, cicilanPokok, estimasiCicilan, totalPembiayaan),
-            const SizedBox(height: 24),
-            _buildUploadSection(),
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
+      body: loanProvider.isLoading && loanProvider.categories.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  _buildLimitBanner(currentLimit),
+                  const SizedBox(height: 24),
+                  _buildJenisPembiayaan(loanProvider.categories),
+                  const SizedBox(height: 24),
+                  _buildJumlahPembiayaanSection(currentLimit),
+                  const SizedBox(height: 24),
+                  _buildTujuanPinjaman(),
+                  const SizedBox(height: 24),
+                  _buildJangkaWaktu(),
+                  const SizedBox(height: 24),
+                  _buildRincianPembiayaan(marginBulan, cicilanPokok, estimasiCicilan, totalPembiayaan),
+                  const SizedBox(height: 24),
+                  _buildUploadSection(),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
       bottomSheet: _buildBottomButton(),
+    );
+  }
+
+  Widget _buildTujuanPinjaman() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Tujuan Pinjaman',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _purposeController,
+            decoration: InputDecoration(
+              hintText: 'Contoh: Renovasi rumah, biaya sekolah, dll',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -172,7 +222,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
                   width: 1.5,
                 ),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
                 ],
               ),
               child: Row(
@@ -236,7 +286,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
         decoration: BoxDecoration(
           color: const Color(0xFFF0F9FF),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF0EA5E9).withValues(alpha: 0.5)),
+          border: Border.all(color: const Color(0xFF0EA5E9).withOpacity(0.5)),
         ),
         child: Row(
           children: [
@@ -262,7 +312,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  Widget _buildJenisPembiayaan() {
+  Widget _buildJenisPembiayaan(List<LoanCategory> categories) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
@@ -273,71 +323,75 @@ class _PinjamanPageState extends State<PinjamanPage> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF111827)),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildTypeCard('Multiguna', 'Rp 10.0jt'),
-              const SizedBox(width: 12),
-              _buildTypeCard('Syariah', 'Rp 15.0jt'),
-              const SizedBox(width: 12),
-              _buildTypeCard('Darurat', 'Sesuai harga barang'),
-            ],
-          ),
+          categories.isEmpty
+            ? const Text("Kategori tidak tersedia", style: TextStyle(color: Colors.grey))
+            : SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return _buildTypeCard(category);
+                  },
+                ),
+              ),
         ],
       ),
     );
   }
 
-  Widget _buildTypeCard(String title, String subtitle) {
-    bool isSelected = _jenisPembiayaan == title;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _jenisPembiayaan = title;
-            double limit = _limits[title] ?? 10000000;
-            if (_jumlahPembiayaan > limit) {
-              _isOverLimit = true;
-            } else {
-              _isOverLimit = false;
-            }
-          });
-        },
-        child: Container(
-          height: 120,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF0F9FF) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE5E7EB),
-              width: isSelected ? 1.5 : 1,
+  Widget _buildTypeCard(LoanCategory category) {
+    bool isSelected = _selectedCategory?.id == category.id;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = category;
+          double limit = category.maxAmount;
+          if (_jumlahPembiayaan > limit) {
+            _isOverLimit = true;
+          } else {
+            _isOverLimit = false;
+          }
+        });
+      },
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFF0F9FF) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF0EA5E9) : const Color(0xFFE5E7EB),
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+          ] : [],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              category.name,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF374151),
+              ),
             ),
-            boxShadow: isSelected ? [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-            ] : [],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? const Color(0xFF0284C7) : const Color(0xFF374151),
-                ),
+            const SizedBox(height: 4),
+            Text(
+              _formatCurrency(category.maxAmount),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected ? const Color(0xFF0369A1) : const Color(0xFF6B7280),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isSelected ? const Color(0xFF0369A1) : const Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -360,7 +414,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
               ],
             ),
             child: Column(
@@ -374,10 +428,13 @@ class _PinjamanPageState extends State<PinjamanPage> {
                       'Rp ',
                       style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                     ),
-                    IntrinsicWidth(
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: 100, maxWidth: 250),
                       child: TextField(
+                        key: const ValueKey('amount_input'),
                         controller: _amountController,
                         keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 32, 
                           fontWeight: FontWeight.bold, 
@@ -387,16 +444,21 @@ class _PinjamanPageState extends State<PinjamanPage> {
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
+                          hintText: '0',
                         ),
                         onChanged: (val) {
+                          if (val.isEmpty) return;
                           String clean = val.replaceAll('.', '');
-                          if (clean.isEmpty) clean = '0';
-                          double parsed = double.parse(clean);
-                          String formatted = _formatNumber(parsed);
-                          _amountController.value = TextEditingValue(
-                            text: formatted,
-                            selection: TextSelection.collapsed(offset: formatted.length),
-                          );
+                          double? parsed = double.tryParse(clean);
+                          if (parsed != null) {
+                            String formatted = _formatNumber(parsed);
+                            if (val != formatted) {
+                              _amountController.value = TextEditingValue(
+                                text: formatted,
+                                selection: TextSelection.collapsed(offset: formatted.length),
+                              );
+                            }
+                          }
                         },
                       ),
                     ),
@@ -406,7 +468,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      'Melebihi limit ${titleCase(_jenisPembiayaan)} (${_formatCurrency(currentLimit)})',
+                      'Melebihi limit ${_selectedCategory?.name ?? ""} (${_formatCurrency(currentLimit)})',
                       style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -416,20 +478,20 @@ class _PinjamanPageState extends State<PinjamanPage> {
                     activeTrackColor: const Color(0xFFE5E7EB),
                     inactiveTrackColor: const Color(0xFFE5E7EB),
                     thumbColor: const Color(0xFF0284C7),
-                    overlayColor: const Color(0xFF0284C7).withValues(alpha: 0.1),
+                    overlayColor: const Color(0xFF0284C7).withOpacity(0.1),
                     trackHeight: 10,
                   ),
                   child: Slider(
-                    value: _jumlahPembiayaan.clamp(1000000.0, currentLimit),
-                    min: 1000000,
-                    max: currentLimit,
+                    value: _jumlahPembiayaan.clamp(100000.0, currentLimit.clamp(100000.0, double.infinity)),
+                    min: 100000,
+                    max: currentLimit < 100000 ? 100000 : currentLimit,
                     onChanged: (val) => _updateAmountFromSlider(val),
                   ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Rp 1jt', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                    const Text('Rp 100rb', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
                     Text(_formatCurrency(currentLimit).replaceAll('Rp ', 'Rp ').replaceAll('.000.000', '.0jt'), style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
                   ],
                 ),
@@ -440,8 +502,6 @@ class _PinjamanPageState extends State<PinjamanPage> {
       ),
     );
   }
-
-  String titleCase(String text) => text[0].toUpperCase() + text.substring(1);
 
   Widget _buildJangkaWaktu() {
     return Padding(
@@ -480,7 +540,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE5E7EB)),
             boxShadow: isSelected ? [
-              BoxShadow(color: const Color(0xFF84CC16).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
+              BoxShadow(color: const Color(0xFF84CC16).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
             ] : [],
           ),
           child: Column(
@@ -530,7 +590,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
               children: [
                 _buildRincianRow('Pokok Pembiayaan', _formatCurrency(_jumlahPembiayaan), isBold: true),
                 const SizedBox(height: 12),
-                _buildRincianRow('Bagi Hasil / Margin (0.5%)', '${_formatCurrency(margin)}/bln', isBold: true),
+                _buildRincianRow('Bagi Hasil / Margin (${_selectedCategory?.interestRate ?? 0.5}%)', '${_formatCurrency(margin)}/bln', isBold: true),
                 const SizedBox(height: 12),
                 _buildRincianRow('Cicilan Pokok per Bulan', _formatCurrencyWithDecimal(pokok), isBold: true),
                 const Padding(
@@ -601,16 +661,62 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
   }
 
-  void _showSuccessDialog() {
+  Future<void> _handleApplyLoan() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (_selectedCategory == null) return;
+    if (_purposeController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Silakan isi tujuan pinjaman')),
+        );
+        return;
+    }
+
+    final loanProvider = context.read<LoanProvider>();
     final authProvider = context.read<AuthProvider>();
 
-    // Catat aktifitas pengajuan pembiayaan ke riwayat
-    authProvider.addManualTransaction(
-      _jumlahPembiayaan,
-      'PENGAJUAN ${_jenisPembiayaan.toUpperCase()}',
-      ['Tenor $_jangkaWaktu Bulan', 'Dokumen: $_uploadedFileName']
+    final result = await loanProvider.applyLoan(
+      categoryId: _selectedCategory!.id,
+      amount: _jumlahPembiayaan,
+      tenor: _jangkaWaktu,
+      purpose: _purposeController.text,
     );
 
+    if (result != null) {
+      // Catat aktifitas pengajuan pembiayaan ke riwayat lokal
+      authProvider.addManualTransaction(
+        _jumlahPembiayaan,
+        'PENGAJUAN ${_selectedCategory!.name.toUpperCase()}',
+        ['Tenor $_jangkaWaktu Bulan', 'Tujuan: ${_purposeController.text}']
+      );
+      _showSuccessDialog();
+    } else {
+      _showErrorDialog(loanProvider.error ?? 'Gagal mengajukan pinjaman');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Kesalahan'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -651,12 +757,13 @@ class _PinjamanPageState extends State<PinjamanPage> {
   }
 
   Widget _buildBottomButton() {
+    final loanProvider = context.watch<LoanProvider>();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))
         ],
       ),
       child: SafeArea(
@@ -664,7 +771,7 @@ class _PinjamanPageState extends State<PinjamanPage> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_isOverLimit || !_isDocumentUploaded) ? null : _showSuccessDialog,
+            onPressed: (_isOverLimit || !_isDocumentUploaded || loanProvider.isLoading) ? null : _handleApplyLoan,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF14A96B),
               foregroundColor: Colors.white,
@@ -672,7 +779,9 @@ class _PinjamanPageState extends State<PinjamanPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
-            child: const Text('Ajukan Pembiayaan Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: loanProvider.isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text('Ajukan Pembiayaan Sekarang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ),

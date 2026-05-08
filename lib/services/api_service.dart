@@ -64,6 +64,10 @@ class ApiService {
     return await _dio.post(path, data: data);
   }
 
+  Future<Response> patch(String path, {dynamic data}) async {
+    return await _dio.patch(path, data: data);
+  }
+
   // Token management
   Future<void> saveTokens(String accessToken, String? refreshToken) async {
     await _storage.write(key: 'access_token', value: accessToken);

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/loan_provider.dart';
+import 'providers/notification_provider.dart';
 import 'services/api_service.dart';
 import 'services/loan_service.dart';
 import 'screens/splash_screen.dart';
@@ -22,6 +23,11 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => LoanProvider(loanService)),
+        Provider<ApiService>(create: (_) => apiService),
+        ChangeNotifierProxyProvider<ApiService, NotificationProvider>(
+          create: (ctx) => NotificationProvider(ctx.read<ApiService>()),
+          update: (_, api, prev) => prev ?? NotificationProvider(api),
+        ),
       ],
       child: const MyApp(),
     ),

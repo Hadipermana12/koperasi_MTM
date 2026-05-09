@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/loan_provider.dart';
+import '../providers/notification_provider.dart';
 import '../models/loan_model.dart';
 
 class PinjamanPage extends StatefulWidget {
@@ -682,6 +683,11 @@ class _PinjamanPageState extends State<PinjamanPage> {
     );
 
     if (result != null) {
+      // Refresh notifikasi untuk mendapatkan info pengajuan terbaru
+      if (mounted) {
+        context.read<NotificationProvider>().fetchNotifications();
+      }
+
       // Catat aktifitas pengajuan pembiayaan ke riwayat lokal
       authProvider.addManualTransaction(
         _jumlahPembiayaan,

@@ -26,6 +26,35 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordVisible = false;
   List<Offset?> _signaturePoints = [];
 
+  // Variabel untuk menyimpan pesan error spesifik
+  String? _nameError;
+  String? _ktpError;
+  String? _phoneError;
+  String? _passwordError;
+  String? _npkError;
+  String? _deptError;
+  String? _accountError;
+  String? _addressError;
+  String? _bankError;
+
+  final List<String> _bankList = [
+    'BANK SAQU',
+    'BANK PERMATA',
+    'BANK BCA',
+    'MANDIRI',
+    'BRI',
+    'BSI',
+    'BNI',
+    'BANK CIMB NIAGA',
+    'BANK DANAMON',
+    'BANK OCBC NISP',
+    'BANK BTN',
+    'BANK MAYBANK',
+    'BANK MEGA',
+  ];
+
+  String? _selectedBank;
+
   final AddressService _addressService = AddressService();
 
   List<Map<String, dynamic>> _provinsiList = [];
@@ -118,23 +147,92 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
-    if (_nameController.text.isEmpty ||
-        _npkController.text.isEmpty ||
-        _deptController.text.isEmpty ||
-        _accountController.text.isEmpty ||
-        _addressController.text.isEmpty ||
-        _selectedProvinsi == null ||
-        _selectedKabupaten == null ||
-        _selectedKecamatan == null ||
-        _selectedKelurahan == null ||
-        _ktpController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua data wajib diisi')),
-      );
-      return;
+    // Reset semua error
+    setState(() {
+      _nameError = null;
+      _ktpError = null;
+      _phoneError = null;
+      _passwordError = null;
+      _npkError = null;
+      _deptError = null;
+      _accountError = null;
+      _addressError = null;
+      _bankError = null;
+    });
+
+    bool hasError = false;
+
+    // Validasi Nama
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _nameError = 'Nama lengkap wajib diisi');
+      hasError = true;
     }
+
+    // Validasi NIK (16 Karakter)
+    String ktp = _ktpController.text.trim();
+    if (ktp.isEmpty) {
+      setState(() => _ktpError = 'No. KTP wajib diisi');
+      hasError = true;
+    } else if (ktp.length != 16) {
+      setState(() => _ktpError = 'No. KTP harus berjumlah 16 karakter (Saat ini: ${ktp.length})');
+      hasError = true;
+    }
+
+    // Validasi No HP (Mulai 08)
+    String phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      setState(() => _phoneError = 'No. Handphone wajib diisi');
+      hasError = true;
+    } else if (!phone.startsWith('08')) {
+      setState(() => _phoneError = 'Nomor HP harus diawali dengan 08');
+      hasError = true;
+    } else if (phone.length < 10) {
+      setState(() => _phoneError = 'Nomor HP terlalu pendek');
+      hasError = true;
+    }
+
+    // Validasi Alamat & Dropdown
+    if (_addressController.text.trim().isEmpty) {
+      setState(() => _addressError = 'Alamat jalan wajib diisi');
+      hasError = true;
+    }
+
+    if (_selectedProvinsi == null || _selectedKabupaten == null ||
+        _selectedKecamatan == null || _selectedKelurahan == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan lengkapi pilihan wilayah (Provinsi - Kelurahan)')),
+      );
+      hasError = true;
+    }
+
+    // Validasi Pekerjaan & Rekening
+    if (_npkController.text.trim().isEmpty) {
+      setState(() => _npkError = 'NPK wajib diisi');
+      hasError = true;
+    }
+    if (_deptController.text.trim().isEmpty) {
+      setState(() => _deptError = 'Bagian wajib diisi');
+      hasError = true;
+    }
+
+    // Validasi Bank
+    if (_selectedBank == null) {
+      setState(() => _bankError = 'Silakan pilih bank');
+      hasError = true;
+    }
+
+    if (_accountController.text.trim().isEmpty) {
+      setState(() => _accountError = 'Nomor rekening wajib diisi');
+      hasError = true;
+    }
+
+    // Validasi Password
+    if (_passwordController.text.length < 6) {
+      setState(() => _passwordError = 'Password minimal 6 karakter');
+      hasError = true;
+    }
+
+    if (hasError) return;
 
     if (_signaturePoints.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'password': _passwordController.text,
         'phoneNumber': _phoneController.text,
         'bankInfo': {
-          'bankName': 'Koperasi', // Default as it's not in the UI
+          'bankName': _selectedBank ?? 'Koperasi',
           'accountNumber': _accountController.text,
           'accountName': _nameController.text,
         },
@@ -311,8 +409,34 @@ class _RegisterPageState extends State<RegisterPage> {
           children: [
             const Text('Informasi Personal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
             const SizedBox(height: 20),
-            _buildInputField(label: 'Nama Lengkap', hint: 'Sesuai KTP', controller: _nameController, icon: Icons.person_outline),
-            _buildInputField(label: 'No. KTP', hint: '16 Digit NIK', controller: _ktpController, icon: Icons.badge_outlined, keyboardType: TextInputType.number),
+            _buildInputField(
+              label: 'Nama Lengkap',
+              hint: 'Sesuai KTP',
+              controller: _nameController,
+              icon: Icons.person_outline,
+              errorText: _nameError,
+            ),
+            _buildInputField(
+              label: 'No. KTP',
+              hint: '16 Digit NIK',
+              controller: _ktpController,
+              icon: Icons.badge_outlined,
+              keyboardType: TextInputType.number,
+              errorText: _ktpError,
+              onChanged: (val) {
+                if (val.length > 16) {
+                  _ktpController.text = val.substring(0, 16);
+                  _ktpController.selection = TextSelection.fromPosition(TextPosition(offset: 16));
+                }
+                setState(() {
+                  if (val.length != 16) {
+                    _ktpError = 'Karakter saat ini: ${val.length}/16';
+                  } else {
+                    _ktpError = null;
+                  }
+                });
+              },
+            ),
             
             const Text('Alamat Lengkap', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
             const SizedBox(height: 8),
@@ -322,20 +446,55 @@ class _RegisterPageState extends State<RegisterPage> {
             _buildDropdown(label: 'Kelurahan/Desa', hint: 'Pilih Kelurahan/Desa', items: _kelurahanList, selectedValue: _selectedKelurahan, onChanged: (val) => setState(() => _selectedKelurahan = val), icon: Icons.home_work_outlined),
             if (_isLoadingAddress) const Padding(padding: EdgeInsets.only(bottom: 16), child: Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)))),
             
-            _buildInputField(label: 'Jalan/Blok/RT/RW', hint: 'Detail Jalan / Gang / Nomor Rumah', controller: _addressController, icon: Icons.home_outlined, maxLines: 2),
-            _buildInputField(label: 'No. Handphone', hint: '0812xxxx', controller: _phoneController, icon: Icons.phone_android_outlined, keyboardType: TextInputType.phone),
+            _buildInputField(
+              label: 'Jalan/Blok/RT/RW',
+              hint: 'Detail Jalan / Gang / Nomor Rumah',
+              controller: _addressController,
+              icon: Icons.home_outlined,
+              maxLines: 2,
+              errorText: _addressError,
+            ),
+            _buildInputField(
+              label: 'No. Handphone',
+              hint: '0812xxxx',
+              controller: _phoneController,
+              icon: Icons.phone_android_outlined,
+              keyboardType: TextInputType.phone,
+              errorText: _phoneError,
+              onChanged: (val) {
+                setState(() {
+                  if (val.isNotEmpty && !val.startsWith('08')) {
+                    _phoneError = 'Harus diawali 08';
+                  } else {
+                    _phoneError = null;
+                  }
+                });
+              },
+            ),
 
             const SizedBox(height: 32),
             const Text('Informasi Pekerjaan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
             const SizedBox(height: 20),
-            _buildInputField(label: 'NPK', hint: 'Nomor Pokok Karyawan', controller: _npkController, icon: Icons.work_outline),
-            _buildInputField(label: 'Bagian / Departemen', hint: 'Contoh: Finance / Produksi', controller: _deptController, icon: Icons.groups_outlined),
+            _buildInputField(label: 'NPK', hint: 'Nomor Pokok Karyawan', controller: _npkController, icon: Icons.work_outline, errorText: _npkError),
+            _buildInputField(label: 'Bagian / Departemen', hint: 'Contoh: Finance / Produksi', controller: _deptController, icon: Icons.groups_outlined, errorText: _deptError),
 
             const SizedBox(height: 32),
             const Text('Informasi Rekening & Keamanan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
             const SizedBox(height: 20),
-            _buildInputField(label: 'Nomor Rekening', hint: 'Untuk pencairan dana', controller: _accountController, icon: Icons.account_balance_wallet_outlined, keyboardType: TextInputType.number),
-            _buildInputField(label: 'Buat Password', hint: 'Minimal 6 karakter', controller: _passwordController, icon: Icons.lock_outline, isPassword: true),
+            _buildSimpleDropdown(
+              label: 'Nama Bank',
+              hint: 'Pilih Bank',
+              items: _bankList,
+              selectedValue: _selectedBank,
+              onChanged: (val) => setState(() {
+                _selectedBank = val;
+                _bankError = null;
+              }),
+              icon: Icons.account_balance_outlined,
+              errorText: _bankError,
+            ),
+            _buildInputField(label: 'Nomor Rekening', hint: 'Untuk pencairan dana', controller: _accountController, icon: Icons.account_balance_wallet_outlined, keyboardType: TextInputType.number, errorText: _accountError),
+            _buildInputField(label: 'Buat Password', hint: 'Minimal 6 karakter', controller: _passwordController, icon: Icons.lock_outline, isPassword: true, errorText: _passwordError),
 
             const SizedBox(height: 32),
             const Text('Tanda Tangan Anggota', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF374151))),
@@ -393,6 +552,51 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  Widget _buildSimpleDropdown({
+    required String label,
+    required String hint,
+    required List<String> items,
+    required String? selectedValue,
+    required ValueChanged<String?> onChanged,
+    required IconData icon,
+    String? errorText,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF4B5563))),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: selectedValue,
+            isExpanded: true,
+            decoration: InputDecoration(
+              hintText: hint,
+              errorText: errorText,
+              errorStyle: const TextStyle(fontSize: 11),
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              prefixIcon: Icon(icon, color: const Color(0xFF0284C7), size: 20),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0284C7))),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(item, style: const TextStyle(fontSize: 14)),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInputField({
     required String label,
     required String hint,
@@ -401,6 +605,8 @@ class _RegisterPageState extends State<RegisterPage> {
     bool isPassword = false,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
+    String? errorText,
+    ValueChanged<String>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
@@ -414,8 +620,11 @@ class _RegisterPageState extends State<RegisterPage> {
             obscureText: isPassword && !_isPasswordVisible,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            onChanged: onChanged,
             decoration: InputDecoration(
               hintText: hint,
+              errorText: errorText,
+              errorStyle: const TextStyle(fontSize: 11),
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               prefixIcon: Icon(icon, color: const Color(0xFF0284C7), size: 20),
               suffixIcon: isPassword ? IconButton(
